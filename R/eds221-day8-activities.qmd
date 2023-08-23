@@ -1,0 +1,85 @@
+---
+title: "Day 8 Activities"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(gghighlight)
+
+```
+
+## Task 1: Do your data viz worst
+
+```{r}
+space_launches <- read_csv(here("data", "space_launches.csv"))
+```
+
+```{r}
+space_launches %>% 
+  filter(agency == "US", launch_year %in% c(2000:2018)) %>% 
+  ggplot(aes(y = launch_year, x = type)) + 
+  labs(x = "TYPE", y = "launch year", color = "yellow") +
+  geom_jitter(size = 10, color = "magenta", shape = 12) +
+  annotate("text", y = 2010, x = "Titan 401B/Centaur", label = "BOOYAH!", color = "turquoise")+
+  theme(panel.background = element_rect("yellow"),
+        plot.background = element_rect("purple"),
+        axis.text.x = element_text(color = "white", angle = 200),
+        axis.text.y = element_text(color = "turquoise"))
+```
+
+## Task 2: Wrangling practice with the SF Greenhouse Gas data
+
+```{r}
+sf_greenhouse_gas <- read_csv(here("data", "San_Francisco_Communitywide_Greenhouse_Gas_Inventory.csv")) %>%
+  clean_names()
+```
+
+1.  Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by sector_general
+
+```{r}
+sf_greenhouse_gas %>% 
+  group_by(sector_general, calendar_year) %>% 
+  summarize(tot_annual_emissions_mt_co2e = sum(emissions_mt_co2e, na.rm = TRUE))
+```
+
+1.  Create a summary table of total annual greenhouse gas emissions (only from Emissions_mtCO2e column) by year and commodity type
+
+```{r}
+sf_greenhouse_gas %>% 
+  group_by(calendar_year, commodity_type) %>% 
+  summarize(tot_annual_emissions_mt_co2e = sum(emissions_mt_co2e, na.rm = TRUE))
+```
+
+1.  Create a subset of the data that only contains observations from 2005 on, only for observations where `Sector_Detail2` contains the pattern \"PG&E\", then limit to columns `Calendar_Year`, `Sector_Detail2` and `Emissions_mtCO2e`.
+
+```{r}
+sf_greenhouse_gas %>% 
+  filter(str_detect(sector_detail2, "PG&E"), !calendar_year %in% c(1990, 2000)) %>% 
+  select(calendar_year, sector_detail2, emissions_mt_co2e)
+```
+
+## Task 3: Do your data viz best
+
+Create a finalized graph (as perfect as you can make it) using the San Francisco GHG emissions dataset. **You** get to choose what you want to visualize. You can pick which variables & observations you\'re interested in. You may want to do some wrangling / summarizing first.
+
+Once you\'ve decided on what to plot, create the best graph that you can to communicate what\'s going on with the data.
+
+**Once you\'re done, drop your best graph (as a .png or .jpg) into the course Slack channel.**
+
+```{r}
+sf_greenhouse_gas %>% 
+  filter(calendar_year %in% c(1990, 2019)) %>% 
+  group_by(sector_general, calendar_year) %>% 
+  summarize(tot_annual_emissions_mt_co2e = sum(emissions_mt_co2e, na.rm = TRUE)) %>% 
+  ggplot(aes(y = sector_general, 
+             x = tot_annual_emissions_mt_co2e)) +
+  geom_col() +
+  facet_wrap(~ calendar_year) +
+  labs(x = "Total annual greenhouse gas emissions (metric tons CO2 equivalent",
+       y = "Sector",
+       title = "SF Greenhouse Gas Emissions Change over 20 years")
+```
